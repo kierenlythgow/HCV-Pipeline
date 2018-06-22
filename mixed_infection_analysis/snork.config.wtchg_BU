@@ -1,0 +1,48 @@
+# ============================================================================ #
+#                                                                              #
+# snork.ini.wtchg.test.ini                                                     #
+#                                                                              #
+# This file should be located in the software bin directory.                   #
+# It stores the default values for this version of Snork programs.             #
+# All paths to directories and programs must resolve on the computing          #
+# on which it is will run.                                                     #
+#                                                                              #
+# - Blank lines are permitted.                                                 #
+# - Lines starting with '#' are comments.                                      #
+# - Leading & trailing spaces around the option names, or values are stripped. #
+# - Options with the same name can appear in more than 1 block.                #
+# - The value of the option is the last one in the file that applies.          #
+# - The leading spaces on every line make it easier to comment out lines.      #
+# - Variable names used more than once refer to the same information.          #
+# - {variable} refers to the value of the variable.                            #
+# - Circulat definitions for values are not permitted.                         #
+# - Options set to DISABLED will not be used.                                  #
+#                                                                              #
+# ============================================================================ #
+
+# ============================================================================ #
+# Installation-specific values
+
+ [prog]
+  blastn             = /phengs/hpc_software/blast+/2.2.27/bin/blastn
+  bwa                = /phengs/hpc_software/bwa/0.7.9a/bwa
+  fastqtosam         = /phengs/hpc_software/picard-tools/1.111/FastqToSam.jar
+  java               = /phengs/hpc_software/jdk/1.8.0_121/bin/java -Xmx1024m
+  samtofastq         = /phengs/hpc_software/picard-tools/1.111/SamToFastq.jar
+  samtools           = /phengs/hpc_software/samtools/1.1/samtools
+
+ [setupref]
+  cleancontignames   = True
+  makerepmask        = False
+  removegaps         = True
+  fastalinewidth     = 100
+
+ [snork]
+  logindentwidth  = 4
+
+# ============================================================================ #
+# Organism-specific values
+
+ [org_Hepc]
+
+# ============================================================================ #

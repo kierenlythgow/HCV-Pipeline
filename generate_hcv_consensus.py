@@ -77,11 +77,11 @@ def main():
 	Args = parse_args()
 
 	#set up logger
-	logger = log_writer.setup_logger('logs/contamination_check_viral.stdout',
-                                     'logs/contamination_check_viral.stderr')
-    log_writer.info_header(logger, "starting contamination check")
-    log_writer.write_log(logger,
-                         "processing samples in %s ...\n" % oArgs.input,
+	logger = log_writer.setup_logger('logs/generate_hcv_consensus.stdout',
+                                     'logs/generate_hcv_consensus.stderr')
+	log_writer.info_header(logger, "starting generate_hcv_consensus")
+	log_writer.write_log(logger,
+                         "processing samples in %s ...\n" % Args.input,
                          "info")
 
 
@@ -102,18 +102,40 @@ def main():
 	component_dir = "generate_hcv_consensus"
 	os.makedirs(component_dir)
 
+	
+	fastqs_exist = len(glob.glob(os.path.join(input_dir, '*.processed.R*.fastq.gz'))) == 2
+
+	if not fastqs_exist:
+		log_writer.write_log(logger,
+			"ERROR: No processed fastqs in %s" % (input_dir),
+			"error")
+
 	for file in glob.glob(r'*processed*fastq*'):
     		print file
+#		try:
+#			assert len(file) == 2
+		#       sFileIn1 = aFastqFileName[0]
+        	#	sFileIn2 = aFastqFileName[1]
+#    		except AssertionError:
+#        		log_writer.write_log(logger,
+#                             "ERROR: not exactly two processed.R*.fastq files found.\n",
+#                             "error")
+#			return 1
+
+		# Copy processed fastq files to generate_hcv_consensus directory for VICUNA
 		shutil.copy2(file, component_dir)
 		sample_detail = file.split('.')
 		sample = sample_detail[0] + '.' + sample_detail[1] + '.' + sample_detail[2]
 		
 	print sample
 	os.chdir(component_dir)
-        print 'Current dir', os.getcwd()
+        # print 'Current dir', os.getcwd()
+        log_writer.write_log(logger,
+                             'Current dir: %s\n' % (os.getcwd()),
+                             "info")
 
 	for pfq in glob.glob(r'*processed*fastq*'):
-		p1 = subprocess.Popen(['gunzip', file],
+		p1 = subprocess.Popen(['gunzip', pfq],
 		stdout=subprocess.PIPE,
 		stderr=subprocess.PIPE)
 
@@ -161,6 +183,8 @@ def main():
 #	print 'Contig map', filt_fq1
 #	quasibam(sample, cons1_sorted_final)
 #	print 'Quasibam', filt_fq1
+
+	return 0
 
 def human_filtering (sample, db, hq_fq1, hq_fq2, filt_fq1, filt_fq2):
 	"""Requires HCV smalt database index path and trimmed fastq files"""
@@ -223,7 +247,10 @@ def human_filtering (sample, db, hq_fq1, hq_fq2, filt_fq1, filt_fq2):
     			print "OSError > ",e.strerror
     			print "OSError > ",e.filename
 		except:
-    			print "Error > ",sys.exc_info()[0]	
+    			print "Error > ",sys.exc_info()[0]
+                        log_writer.write_log(logger,
+                                             "Error: %s\n" % (sys.exc_info()[0]),
+                                             "error")
 	
 
 	for flag, fq in zip(('64','128'), (filt_fq1, filt_fq2)):
@@ -371,10 +398,13 @@ def split_pops(sample, filt_fq1, filt_fq2):
         	(stdoutdata, stderrdata) = p2.communicate()
         	if stdoutdata:
 			print "splitpopsrc ",p2.returncode
+                        # sys.stdout.write("splitpopsrc %i\n" % (p2.returncode))
+#                        log_writer. ...
 			print "SUCCESS ",stdoutdata
 		if stderrdata:
 			print "splitpopsrc ",p2.returncode
 			print "ERROR ",stderrdata.strip()
+                        sys.stderr.write("ERROR %s\n" % (stderrdata.strip()))
 	
 	except OSError as e:
     		print "OSError > ",e.errno
