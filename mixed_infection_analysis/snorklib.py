@@ -9,6 +9,8 @@ import signal
 import subprocess as sp
 import sys
 
+import utility_functions as uf
+
 class snorklib(object):
 
     def __init__(self):
@@ -130,6 +132,57 @@ class snorklib(object):
 
     # conf
 
+    def parsePATH_for_(self, exe_specification):
+        '''
+        searches PATH using exe_specification
+        Parameters
+        ---------
+        exe_specification:str from snork.config [prog] section
+            format <installation_path_endpoint[/bin]>:<exe>
+            e.g. blast+/bin:blastn
+            e.g. bwa:bwa
+        Returns
+        -------
+        Installation path for exe
+        Dependencies
+        ------------
+        Requires load of modulefile putting exe on PATH
+        Throws
+        ------
+        if exe not found on PATH; err_code=65
+        '''
+        paths = os.environ.get('PATH').split(':')
+        print '\nexe_specification:', exe_specification #tmp#
+    
+        find_path, exe = exe_specification.split(':')
+        if '/' in find_path:
+            find_path,endpoint = find_path.split('/')
+        in_paths = [p for p in paths if find_path in p]
+        if not in_paths:
+            # throw something
+            print '{} not found in PATH; require module load putting it on PATH'.format(find_path)
+            sys.exit(65)
+    
+        if not '/' in exe_specification:
+            for p in in_paths:
+                if not uf.has_version_endpoint(p):
+                    continue
+    
+                # accommodate inconsistently-present trailing solidus from Modulefile entry
+                elif not p.endswith('/'):
+                    return '{}/{}'.format(p, exe)
+    
+                else:
+                    return '{}{}'.format(p, exe)
+        else:
+            # endpoint is /bin
+            for p in in_paths:
+                if not has_version_endpoint(p.replace(endpoint,'')):
+                    continue
+                else:
+                    return '{}/{}'.format(p, exe)
+
+
     def config_read(self, inipath):
         'Read all the data from the inipath into section and option variables; set lasterror if anything goes wrong.'
         line_section = "UNDEFINED"
@@ -153,7 +206,7 @@ class snorklib(object):
                     L = line.split("=")
                     var = L[0].replace(" ", "")         # Contains no spaces
                     val = "=".join(L[1:]).strip()       # Could contain spaces
-                    self.option[line_section][var] = val
+                    self.option[line_section][var] = parsePATH_for_(val)
                     optionflat[var] = val
             in_fp.close()
       # The section that replaces any instances of {variable} with the value of self.option[section][variable]
