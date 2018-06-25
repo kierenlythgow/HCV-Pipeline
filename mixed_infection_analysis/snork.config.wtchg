@@ -25,12 +25,12 @@
 # Installation-specific values
 
  [prog]
-  blastn             = blastn
-  bwa                = bwa
-  fastqtosam         = /phengs/hpc_software/picard-tools/1.111/FastqToSam.jar
-  java               = java -Xmx1024m
-  samtofastq         = /phengs/hpc_software/picard-tools/1.111/SamToFastq.jar
-  samtools           = samtools
+  blastn             = blast+/bin:blastn
+  bwa                = bwa:bwa
+  fastqtosam         = picard-tools:FastqToSam.jar
+  java               = jdk/bin:java -Xmx1024m 
+  samtofastq         = picard-tools:SamToFastq.jar 
+  samtools           = samtools:samtools
 
  [setupref]
   cleancontignames   = True
