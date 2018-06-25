@@ -958,5 +958,5 @@ def quasibam(sample, cons1_sorted_final):
 
 if __name__ == '__main__':
 
-        main()
+    sys.exit(main())
 
