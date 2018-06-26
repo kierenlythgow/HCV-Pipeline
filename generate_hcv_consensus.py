@@ -384,7 +384,7 @@ def split_pops(sample, filt_fq1, filt_fq2):
 			             '-dataid', sample,
 			             '-samplename', sample,
 			             '-bampath', filt_bam,
-			             '-targetrefid', 'wtchgR00000071',
+			             '-targetrefid', 'new_hcvrefset',
 			             '-targetrefpath', target_ref,
 			             '-outdir', split_dir,
 			             '-logdir', split_dir,
