@@ -161,7 +161,7 @@ def main():
 	hq_fq2 = '%s.processed.R2.fastq' % (sample)	
 	filt_fq1 = 'assembly/%s_filtered_1.fastq' % (sample)
 	filt_fq2 = 'assembly/%s_filtered_2.fastq' % (sample)
-	db = '/home/kieren/result_dir/hg38_hcv_k15_s3' #define HCV db filepath
+	db = '/phengs/hpc_software/ucl_assembly/hg38_hcv_nless_k15_s3' #define HCV db filepath
 	hcvfasta = '/home/kieren/UCL_IVA/Data/hcv.fasta'
 	contigs= 'assembly/%s.contigs.fasta' % (sample)
 	best_ref_fasta = '%s-ref.fasta' % (sample)
@@ -171,18 +171,18 @@ def main():
 	
 	human_filtering (sample, db, hq_fq1, hq_fq2, filt_fq1, filt_fq2)
 	print 'Filtering', filt_fq1
-#	split_pops(sample, filt_fq1, filt_fq2)
-#	print 'Splitpops', filt_fq1
-#	denovo_assembly(sample)
-#	print 'De novo', filt_fq1
-#	find_best_ref(sample, hcvfasta)
-#	print 'Find bestref', filt_fq1
-#	assemble_draft(sample, lastz_path, best_ref_fasta)
-#	print 'Assemble draft', filt_fq1
-#	contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analysed_file)
-#	print 'Contig map', filt_fq1
-#	quasibam(sample, cons1_sorted_final)
-#	print 'Quasibam', filt_fq1
+	split_pops(sample, filt_fq1, filt_fq2)
+	print 'Splitpops', filt_fq1
+	denovo_assembly(sample)
+	print 'De novo', filt_fq1
+	find_best_ref(sample, hcvfasta)
+	print 'Find bestref', filt_fq1
+	assemble_draft(sample, lastz_path, best_ref_fasta)
+	print 'Assemble draft', filt_fq1
+	contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analysed_file)
+	print 'Contig map', filt_fq1
+	quasibam(sample, cons1_sorted_final)
+	print 'Quasibam', filt_fq1
 
 	return 0
 
@@ -958,5 +958,5 @@ def quasibam(sample, cons1_sorted_final):
 
 if __name__ == '__main__':
 
-    sys.exit(main())
+        main()
 
