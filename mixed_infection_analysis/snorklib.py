@@ -207,8 +207,8 @@ class snorklib(object):
                     var = L[0].replace(" ", "")         # Contains no spaces
                     val = "=".join(L[1:]).strip()       # Could contain spaces
                     self.option[line_section][var] = parsePATH_for_(val)
-                    optionflat[var] = val
-            in_fp.close()
+                    optionflat[var] = parsePATH_for_(val)
+            in_fp.close() # odd way to wrap up a contextmanager
       # The section that replaces any instances of {variable} with the value of self.option[section][variable]
       # For every variable, replace {variable} with value in every other value in the dictionary.
         for section, D in self.option.iteritems():
@@ -221,6 +221,7 @@ class snorklib(object):
                     self.option[section][var] = self.option[section][var].replace(oldstring, newstring)
                 except:
                     pass
+                    # https://realpython.com/the-most-diabolical-python-antipattern/
         return True
 
   # sys
