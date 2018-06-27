@@ -204,7 +204,7 @@ def human_filtering (sample, db, hq_fq1, hq_fq2, filt_fq1, filt_fq2):
                 for i, l in enumerate(hq2):
                         pass
 
-        rev_reads = (i + 1)/4
+    rev_reads = (i + 1)/4
 
     print 'Trimmed reverse reads', rev_reads
 
