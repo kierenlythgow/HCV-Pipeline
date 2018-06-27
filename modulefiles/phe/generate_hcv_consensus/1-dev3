@@ -7,7 +7,7 @@
 
 # for Tcl script use only
 set     name            generate_hcv_consensus
-set     version         1-dev2
+set     version         1-dev3
 #set     modroot         /phengs/hpc_software/phe/workflows/components/$name/$version
 set     modroot        /home/kieren/$name/$version
 
@@ -29,16 +29,18 @@ prepend-path PATH      $modroot
 prepend-path PATH      $modroot/mixed_infection_analysis
 prepend-path PATH      $modroot/reference_mapping_scripts
 
+setenv GENERATE_HCV_CONSENSUS_VICUNA_CONFIG $modroot/configs/vicuna_config.txt
+
 module load python/2.7.6
 module load yaml/1.1
-module load psutil/python2.7.6/3.0.0 
-module load jdk/1.8.0_121 
-module load picard-tools/1.111 
-module load samtools/1.1 
-module load blast+/2.2.27 
-module load bamtools/2.3.0 
-module load bwa/0.7.13 
-module load smalt/0.7.6 
+module load psutil/python2.7.6/3.0.0
+module load jdk/1.8.0_121
+module load picard-tools/1.111
+module load samtools/1.1
+module load blast+/2.2.27
+module load bamtools/2.3.0
+module load bwa/0.7.13
+module load smalt/0.7.6
 module load bedtools/2.26.0
 module load vicuna/1.3
 
