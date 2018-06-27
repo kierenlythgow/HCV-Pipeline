@@ -231,14 +231,14 @@ def human_filtering (sample, db, hq_fq1, hq_fq2, filt_fq1, filt_fq2):
             #Close file handle for sam file
             p1.stdout.close()
         
-                (stdoutdata, stderrdata) = p2.communicate()
+            (stdoutdata, stderrdata) = p2.communicate()
             if stdoutdata:
                 print 'smaltrc ', p1.returncode
                 print 'greprc ', p2.returncode
                 print "SUCCESS ", stdoutdata
             if stderrdata:
                 print 'smaltrc ', p1.returncode
-                            print 'greprc ', p2.returncode
+                print 'greprc ', p2.returncode
                 print "ERROR ",stderrdata.strip()
     
         except OSError as e:
@@ -247,7 +247,7 @@ def human_filtering (sample, db, hq_fq1, hq_fq2, filt_fq1, filt_fq2):
                 print "OSError > ",e.filename
         except:
                 print "Error > ",sys.exc_info()[0]
-                        log_writer.write_log(logger,
+                log_writer.write_log(logger,
                                              "Error: %s\n" % (sys.exc_info()[0]),
                                              "error")
     
@@ -281,8 +281,8 @@ def human_filtering (sample, db, hq_fq1, hq_fq2, filt_fq1, filt_fq2):
                     print "SUCCESS ",stdoutdata
                 if stderrdata:
                     print 'view_fqrc ', p1.returncode
-                                    print 'bamtofqrc ', p2.returncode
-                                      print "ERROR ",stderrdata.strip()
+                    print 'bamtofqrc ', p2.returncode
+                    print "ERROR ",stderrdata.strip()
 
             except OSError as e:
                     print "OSError > ",e.errno
@@ -301,7 +301,7 @@ def human_filtering (sample, db, hq_fq1, hq_fq2, filt_fq1, filt_fq2):
 
     print 'Filtered forward reads', filt_fw_reads
 
-        with open(filt_fq2) as f2:
+    with open(filt_fq2) as f2:
                    for i, l in enumerate(f2):
                            pass
 
@@ -334,7 +334,7 @@ def split_pops(sample, filt_fq1, filt_fq2):
     
     #Essential that this directory is completely separate as splitpops cleans up the directory and deletes all input files
     split_dir = 'splitpops/'
-           os.makedirs(split_dir)
+    os.makedirs(split_dir)
 
     splitpops = '/home/kieren/Snork6/Snork-PHE/0.6/src/snork.py'
     target_ref = '/phengs/hpc_software/ucl_assembly/new_hcvrefset'
@@ -354,14 +354,14 @@ def split_pops(sample, filt_fq1, filt_fq2):
 
 #    print p1
 
-            (stdoutdata, stderrdata) = p1.communicate()
+        (stdoutdata, stderrdata) = p1.communicate()
         if stdoutdata:
             print "Fastq2bamrc ",p1.returncode
             print "SUCCESS ", stdoutdata
         
         if stderrdata:
             print "Fastq2bamrc ",p1.returncode
-                print "ERROR ",stderrdata.strip()
+            print "ERROR ",stderrdata.strip()
 
     except OSError as e:
             print "OSError > ",e.errno
@@ -392,10 +392,10 @@ def split_pops(sample, filt_fq1, filt_fq2):
                          '-verbosity', 'DEBUG'],
 
         stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+        stderr=subprocess.PIPE)
 #    print p2
-            (stdoutdata, stderrdata) = p2.communicate()
-            if stdoutdata:
+        (stdoutdata, stderrdata) = p2.communicate()
+        if stdoutdata:
             print "splitpopsrc ",p2.returncode
                         # sys.stdout.write("splitpopsrc %i\n" % (p2.returncode))
 #                        log_writer. ...
@@ -403,7 +403,7 @@ def split_pops(sample, filt_fq1, filt_fq2):
         if stderrdata:
             print "splitpopsrc ",p2.returncode
             print "ERROR ",stderrdata.strip()
-                        sys.stderr.write("ERROR %s\n" % (stderrdata.strip()))
+            sys.stderr.write("ERROR %s\n" % (stderrdata.strip()))
     
     except OSError as e:
             print "OSError > ",e.errno
@@ -418,7 +418,7 @@ def split_pops(sample, filt_fq1, filt_fq2):
     d={}
     with open (split_stats, 'r') as s:
         #Skips the header line and only returns the top 2 lines (Highest scoring genotype matches)
-            lines = s.readlines()[1:3]
+        lines = s.readlines()[1:3]
         main_geno = lines[0].split()
         main_geno_name = main_geno[0]
         main_geno_perc = main_geno[2]
@@ -432,7 +432,7 @@ def split_pops(sample, filt_fq1, filt_fq2):
 #            for k,v in d.items():
 #            print k, '=', v
 
-    result = ET.Element('results')
+        result = ET.Element('results')
         items = ET.SubElement(result,'genotypes')
         item1 = ET.SubElement(items, 'genotype1')
         item2 = ET.SubElement(items, 'genotype2')
@@ -493,7 +493,7 @@ def denovo_assembly(sample):
     (stdoutdata, stderrdata) = p1.communicate()
     print stderrdata
     print stdoutdata
-        print 'vicunarc ', p1.returncode
+    print 'vicunarc ', p1.returncode
 
     #Following completion of VICUNA, the 'dg-0' needs to be replaced by sample name and 
     # contig number starting at 1 as VICUNA starts at 0
@@ -548,9 +548,9 @@ def denovo_assembly(sample):
     elif int(count) == 1:
         print 'Single contig'
         items = ET.SubElement(result, 'Contigs')
-                item2 = ET.SubElement(items, 'number of contigs')
-                item2.set('Contig value','number')
-                item2.text = 'Single contig'
+        item2 = ET.SubElement(items, 'number of contigs')
+        item2.set('Contig value','number')
+        item2.text = 'Single contig'
 
 
 
@@ -564,9 +564,9 @@ def denovo_assembly(sample):
     else:
         print 'Number of contigs =', count
         items = ET.SubElement(result, 'Contigs')
-                item3 = ET.SubElement(items, 'number of contigs')
-                item3.set('Contig value','number')
-                item3.text = str(count)
+        item3 = ET.SubElement(items, 'number of contigs')
+        item3.set('Contig value','number')
+        item3.text = str(count)
 
 
 
@@ -582,13 +582,13 @@ def denovo_assembly(sample):
     print '\n'.join(newdata)
     
     xmldata = ET.tostring(result)
-        samplexml = '%s_denovo.xml' % sample
-        xmlfile = open(samplexml, 'w')
-        xmlfile.write(xmldata)     
+    samplexml = '%s_denovo.xml' % sample
+    xmlfile = open(samplexml, 'w')
+    xmlfile.write(xmldata)     
     
     #Very important that this file is named correctly as lastz_analyser.WITH_REVCOMP.pl script will fail later in the pipeline.
     # It must be named samplename.contigs.fasta
-     contigs_increment = 'assembly/%s.contigs.fasta' % (sample)
+    contigs_increment = 'assembly/%s.contigs.fasta' % (sample)
     
     with open(contigs_increment, 'w') as ci:
         ci.write('\n'.join(newdata))
@@ -600,11 +600,11 @@ def find_best_ref(sample, hcvfasta):
     #Path to current available lastz executable
     lastz_path = '/home/kieren/lastz-distrib/bin/lastz'
     #Path to contigs fasta file with the specification of [multiple] required by lastz if multiple contigs
-        contigs = 'assembly/%s.contigs.fasta[multiple]' % (sample)
+    contigs = 'assembly/%s.contigs.fasta[multiple]' % (sample)
     #Path to lastz output file
     contigs_lastz = 'assembly/contig.lastz'
 
-        with open(contigs_lastz, 'w') as cz:
+    with open(contigs_lastz, 'w') as cz:
                 #Run LASTZ
                 p1 = subprocess.Popen([lastz_path, contigs, hcvfasta, 
                         '--ambiguous=iupac',
@@ -617,7 +617,7 @@ def find_best_ref(sample, hcvfasta):
     (stdoutdata, stderrdata) = p1.communicate()
     print stderrdata
     print stdoutdata
-        print 'lastzrc ', p1.returncode
+    print 'lastzrc ', p1.returncode
 
     lastz_log = 'assembly/lastz_besthit.log'
     lastz_bestref = '/phengs/hpc_software/ucl_assembly/lastz_bestref.pl'
@@ -630,13 +630,16 @@ def find_best_ref(sample, hcvfasta):
                 '-blastdb='+ hcvfasta,
                 '-best_ref_fasta='+ best_ref_fasta,
                 '-lastz_best_hit_log='+ lastz_log],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
-        
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
+
+
+
+
     (stdoutdata, stderrdata) = p1.communicate()
-        print 'BEST REF STDERR', stderrdata
-        print 'BEST REF STDOUT', stdoutdata
-        print 'lastz_best_refrc ', p1.returncode
+    print 'BEST REF STDERR', stderrdata
+    print 'BEST REF STDOUT', stdoutdata
+    print 'lastz_best_refrc ', p1.returncode
 
 
 def assemble_draft(sample, lastz_path, best_ref_fasta):
@@ -654,9 +657,9 @@ def assemble_draft(sample, lastz_path, best_ref_fasta):
             stderr=subprocess.PIPE)
 
     (stdoutdata, stderrdata) = p1.communicate()
-        print 'Contigs vs bestref STDERR', stderrdata
-        print 'Contigs vs bestref STDOUT', stdoutdata
-        print 'Contigs_vs_best_refrc ', p1.returncode
+    print 'Contigs vs bestref STDERR', stderrdata
+    print 'Contigs vs bestref STDOUT', stdoutdata
+    print 'Contigs_vs_best_refrc ', p1.returncode
 
 
     lastz_analyser_rev = '/phengs/hpc_software/ucl_assembly/lastz_analyser.WITH_REVCOMP.pl'
@@ -675,10 +678,10 @@ def assemble_draft(sample, lastz_path, best_ref_fasta):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE)
 
-        (stdoutdata, stderrdata) = p2.communicate()
-        print 'lastz analyser STDERR', stderrdata
-        print 'lastz analyser STDOUT', stdoutdata
-        print 'lastz_analyserrc ', p2.returncode
+    (stdoutdata, stderrdata) = p2.communicate()
+    print 'lastz analyser STDERR', stderrdata
+    print 'lastz analyser STDOUT', stdoutdata
+    print 'lastz_analyserrc ', p2.returncode
 
 def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analysed_file):
     ## map reads using BWA MEM to contigs to work out which sequences to choose when contigs overlap
@@ -735,9 +738,9 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
             stderr=subprocess.PIPE)
     
         (stdoutdata, stderrdata) = p1.communicate()
-             print 'bwa index STDERR', stderrdata
-            print 'bwa index STDOUT', stdoutdata
-            print 'bwarc ', p1.returncode
+        print 'bwa index STDERR', stderrdata
+        print 'bwa index STDOUT', stdoutdata
+        print 'bwarc ', p1.returncode
 
         with open(sam, 'w') as s:
             p1 = subprocess.Popen(['bwa', 'mem',
@@ -750,8 +753,8 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
     
             (stdoutdata, stderrdata) = p1.communicate()
             print 'bwa mem STDERR', stderrdata
-                   # print 'bwa mem STDOUT', stdoutdata
-                print 'bwamemrc ', p1.returncode
+            # print 'bwa mem STDOUT', stdoutdata
+            print 'bwamemrc ', p1.returncode
 
             p2 = subprocess.Popen(['samtools', 'view', '-bhS',
                     '-o', bam, sam],
@@ -761,7 +764,7 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
     
             (stdoutdata, stderrdata) = p2.communicate()
             print 'samtools view STDERR', stderrdata
-                print 'samtools view STDOUT', stdoutdata
+            print 'samtools view STDOUT', stdoutdata
             print 'samtoolsviewrc ', p2.returncode    
 
     
@@ -771,19 +774,19 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                 stderr=subprocess.PIPE)
 
             (stdoutdata, stderrdata) = p3.communicate()
-                print 'samtools sort STDERR', stderrdata
+            print 'samtools sort STDERR', stderrdata
             print 'samtools sort STDOUT', stdoutdata
-                print 'samtoolssortrc ', p3.returncode
+            print 'samtoolssortrc ', p3.returncode
 
         
             p4 = subprocess.Popen(['samtools', 'index', final],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE)
 
-                      (stdoutdata, stderrdata) = p4.communicate()
-                    print 'samtools index STDERR', stderrdata
-                    print 'samtools index STDOUT', stdoutdata
-                           print 'samtoolsindexrc ', p4.returncode
+            (stdoutdata, stderrdata) = p4.communicate()
+            print 'samtools index STDERR', stderrdata
+            print 'samtools index STDOUT', stdoutdata
+            print 'samtoolsindexrc ', p4.returncode
         
             p5 = subprocess.Popen(['samtools', 'mpileup', '-f',
                         fasta,
@@ -792,10 +795,10 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE)
 
-                    (stdoutdata, stderrdata) = p5.communicate()
-                    print 'samtools mpileup STDERR', stderrdata
-#                   print 'samtools mpileup STDOUT', stdoutdata
-                    print 'samtoolsmpileuprc ', p5.returncode
+            (stdoutdata, stderrdata) = p5.communicate()
+            print 'samtools mpileup STDERR', stderrdata
+#           print 'samtools mpileup STDOUT', stdoutdata
+            print 'samtoolsmpileuprc ', p5.returncode
     
         #Helpful method for checking exactly what is sent to the command line (subprocess.list2cmdline)
             if fasta==contigs:    
@@ -806,9 +809,9 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                 print 'fasta is contigs'
 
                 (stdoutdata, stderrdata) = p6.communicate()
-                    print 'gm or cons STDERR', stderrdata
+                print 'gm or cons STDERR', stderrdata
                 print 'gm or cons STDOUT', stdoutdata
-                       print 'gm or cons rc ', p6.returncode
+                print 'gm or cons rc ', p6.returncode
 
             elif fasta==genome_fasta:
 
@@ -827,10 +830,10 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                 stderr=subprocess.PIPE)
 
                 print 'fasta is genome'
-                            (stdoutdata, stderrdata) = p7.communicate()
-                            print 'Consmv STDERR', stderrdata
-                            print 'Consmv STDOUT', stdoutdata
-                            print 'Consmv rc ', p7.returncode
+                (stdoutdata, stderrdata) = p7.communicate()
+                print 'Consmv STDERR', stderrdata
+                print 'Consmv STDOUT', stdoutdata
+                print 'Consmv rc ', p7.returncode
                 
                 p8 = subprocess.Popen(['perl', '-w', '-s', n_remover,
                                                  '-cutoff=46',
@@ -839,10 +842,10 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                 stdout=open(cons1_fasta, 'w'), 
                 stderr=subprocess.PIPE)                
                 
-                                (stdoutdata, stderrdata) = p8.communicate()
-                                print 'N_remover STDERR', stderrdata
-                                print 'N_remover STDOUT', stdoutdata
-                                print 'N_remover rc ', p8.returncode
+                (stdoutdata, stderrdata) = p8.communicate()
+                print 'N_remover STDERR', stderrdata
+                print 'N_remover STDOUT', stdoutdata
+                print 'N_remover rc ', p8.returncode
 
             else:
 
@@ -861,23 +864,23 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
 
-                                print 'fasta is consensus'
-                                (stdoutdata, stderrdata) = p9.communicate()
-                                print 'Consmv STDERR', stderrdata
-                                print 'Consmv STDOUT', stdoutdata
-                                print 'Consmv rc ', p9.returncode
+                print 'fasta is consensus'
+                (stdoutdata, stderrdata) = p9.communicate()
+                print 'Consmv STDERR', stderrdata
+                print 'Consmv STDOUT', stdoutdata
+                print 'Consmv rc ', p9.returncode
 
-                                p10 = subprocess.Popen(['perl', '-w', '-s', n_remover,
-                                                        '-cutoff=46',
-                                                        cons2_pren],
+                p10 = subprocess.Popen(['perl', '-w', '-s', n_remover,
+                                        '-cutoff=46',
+                                        cons2_pren],
 
-                                stdout=open(cons2_fasta, 'w'),
-                                stderr=subprocess.PIPE)
+                stdout=open(cons2_fasta, 'w'),
+                stderr=subprocess.PIPE)
 
-                                (stdoutdata, stderrdata) = p10.communicate()
-                                print 'N_remover STDERR', stderrdata
-                                print 'N_remover STDOUT', stdoutdata
-                                print 'N_remover rc ', p10.returncode
+                (stdoutdata, stderrdata) = p10.communicate()
+                print 'N_remover STDERR', stderrdata
+                print 'N_remover STDOUT', stdoutdata
+                print 'N_remover rc ', p10.returncode
 
                 p11 = subprocess.Popen(['perl', '-w', '-s', majvar,
                                                       '-mvpath='+ cons1_mv,
@@ -888,9 +891,9 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                 stderr=subprocess.PIPE)
                 
                 (stdoutdata, stderrdata) = p11.communicate()
-                             print 'Majvar STDERR', stderrdata
-                              print 'Majvar STDOUT', stdoutdata
-                               print 'Majvar rc ', p11.returncode
+                print 'Majvar STDERR', stderrdata
+                print 'Majvar STDOUT', stdoutdata
+                print 'Majvar rc ', p11.returncode
                 
                 
                 p12 = subprocess.Popen(['samtools', 'view',
@@ -900,21 +903,21 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
 
-                                (stdoutdata, stderrdata) = p12.communicate()
-                                print 'samtools view mapcount STDERR', stderrdata
-                                print 'samtools view mapcount STDOUT', stdoutdata
-                                print 'samtools view mapcount rc ', p12.returncode
+                (stdoutdata, stderrdata) = p12.communicate()
+                print 'samtools view mapcount STDERR', stderrdata
+                print 'samtools view mapcount STDOUT', stdoutdata
+                print 'samtools view mapcount rc ', p12.returncode
 
                 result = ET.Element('results')
-                    items = ET.SubElement(result,'mapping')
-                    item1 = ET.SubElement(items, 'mapping')
-                    item1.set('result','reads mapped to contigs')
-                    item1.text = str(stdoutdata)
+                items = ET.SubElement(result,'mapping')
+                item1 = ET.SubElement(items, 'mapping')
+                item1.set('result','reads mapped to contigs')
+                item1.text = str(stdoutdata)
 
-                    xmldata = ET.tostring(result)
-                    samplexml = '%s_mapping.xml' % sample
-                    xmlfile = open(samplexml, 'w')
-                    xmlfile.write(xmldata)
+                xmldata = ET.tostring(result)
+                samplexml = '%s_mapping.xml' % sample
+                xmlfile = open(samplexml, 'w')
+                xmlfile.write(xmldata)
 
 def quasibam(sample, cons1_sorted_final):
 #    """Run quasibam on consensus bam file and consensus fasta sequence"""
@@ -943,9 +946,9 @@ def quasibam(sample, cons1_sorted_final):
     stderr=subprocess.PIPE)
 
     (stdoutdata, stderrdata) = p1.communicate()
-          print stderrdata
+    print stderrdata
     print stdoutdata
-          print 'quasibamrc ', p1.returncode
+    print 'quasibamrc ', p1.returncode
 
 
 if __name__ == '__main__':
