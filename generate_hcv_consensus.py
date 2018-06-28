@@ -12,11 +12,13 @@ import subprocess
 import argparse
 import re
 import logging
-import log_writer
 import csv
 import shutil
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
+import inspect
+
+import log_writer
 
 __version__ = '0.1'
 __date__ = '07Jun2018'
@@ -57,6 +59,11 @@ def parse_args():
                           help='The workflow that this sample was entered into. \
                                 [default: 0 = get from file name]')
 
+    Parser.add_argument('-ref', '--ref_set',
+                        dest='refset_dir',
+                        default = os.environ.get('GENERATE_HCV_CONSENSUS_REFERENCE_DIR'),
+                        help='Full path to refset_dir including all reference requirements for this component [TODO succinct descr required]')
+
     Args = Parser.parse_args()
     return Args
 
@@ -75,6 +82,9 @@ def main():
     """
 
     Args = parse_args()
+    if not Args.refset_dir:
+        print('pass a full refset path to the `ref_set` passed to param')
+        sys.exit(inspect.currentframe().f_lineno)
 
     #set up logger
     logger = log_writer.setup_logger('logs/generate_hcv_consensus.stdout',
