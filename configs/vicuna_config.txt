@@ -33,7 +33,7 @@ maxOverhangSize	2
 
 // Fasta file storing Multiple Sequence Alignment (MSA) of HCV
 // genomes from database
-MSAFileName	/home/kieren/hcv_wgs_alignment.fas
+MSAFileName	*MSA_FILE*
 
 // number of bins for dividing MSA, in the range of [10, 256] [default 20] 
 binNumber	20

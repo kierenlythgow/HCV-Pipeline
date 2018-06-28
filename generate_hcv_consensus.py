@@ -170,8 +170,10 @@ def main():
     hq_fq2 = '%s.processed.R2.fastq' % (sample)    
     filt_fq1 = 'assembly/%s_filtered_1.fastq' % (sample)
     filt_fq2 = 'assembly/%s_filtered_2.fastq' % (sample)
-    db = '/home/kieren/result_dir/hg38_hcv_k15_s3' #define HCV db filepath
-    hcvfasta = '/home/kieren/UCL_IVA/Data/hcv.fasta'
+#    db = '/home/kieren/result_dir/hg38_hcv_k15_s3' #define HCV db filepath
+    db = '{}/TODO here insert name of smalt refset once copied into refset_dir'.format(Args.refset_dir)
+#    hcvfasta = '/home/kieren/UCL_IVA/Data/hcv.fasta'
+    hcvfasta = '{}/lastz_hcv.fasta'.format(Args.refset_dir)
     contigs= 'assembly/%s.contigs.fasta' % (sample)
     best_ref_fasta = '%s-ref.fasta' % (sample)
     lastz_path = '/home/kieren/lastz-distrib/bin/lastz'
@@ -347,7 +349,8 @@ def split_pops(sample, filt_fq1, filt_fq2):
     os.makedirs(split_dir)
 
     splitpops = '/home/kieren/Snork6/Snork-PHE/0.6/src/snork.py'
-    target_ref = '/phengs/hpc_software/ucl_assembly/new_hcvrefset'
+#    target_ref = '/phengs/hpc_software/ucl_assembly/new_hcvrefset'
+    target_ref = '{}/new_hcvrefset'.format(Args.refset_dir)
     filt_bam = '%s_filtered.bam' % (sample)
 
 #    #Convert filtered fastqs into bam file
@@ -487,7 +490,9 @@ def denovo_assembly(sample):
     #Prepare vicuna config file for specific sample
     with open(os.environ.get('GENERATE_HCV_CONSENSUS_VICUNA_CONFIG')) as cfg_in, \
         open('vicuna_config_%s.txt' % (sample), 'w') as cfg_out:
-        cfg_out.write( cfg_in.read().replace('*DIR*', os.getcwd()))
+        cfg_out.write( cfg_in.read(). \
+                        replace('*DIR*', os.getcwd()). \
+                        replace('*MSA_FILE*'), '{}/hcv_wgs_alignment.fas'.format(Args.refset_dir) )
 
     #Create directory for VICUNA assembly and check to see if it already exists
 #    vicuna_dir_path = '%s/assembly/' % (sample)
