@@ -1,0 +1,59 @@
+#%Module1.0#####################################################################
+##
+## modules modulefile
+##
+## modulefiles/modules.  Generated from modules.in by configure.
+##
+
+# for Tcl script use only
+set     name            generate_hcv_consensus
+set     version         1-dev3
+#set     modroot         /phengs/hpc_software/phe/workflows/components/$name/$version
+set     modroot        /home/kieren/$name/$version
+
+proc ModulesHelp { } {
+        global name version modroot
+
+        puts stderr "\t$name - Version $version - loads the $name software & application environment"
+        puts stderr "\n\t$name requires a reference source. None is by default loaded, so manual calls must"
+        puts stderr "\tpass into $name the path to a reference dir which meets its reference requirements."
+        puts stderr "\n\tProduction qsub runs automatically load the path to the latest reference_set."
+        puts stderr "\tThis automatic load has the pre-requisite below, which production qsub scripts execute."
+        puts stderr "\texport WORKFLOW_NAME=<workflow_name>, where <workflow_name> lacks the trailing .<wf_version>."
+        puts stderr "\tThis export enables automated module load phe/phe_ref/<WORKFLOW_NAME>/${name}_reference"
+        puts stderr "\timplicitly to load the latest reference_set."
+        puts stderr "\n\tThis adds $modroot/* to several of the"
+        puts stderr "\tenvironment variables.\n"
+}
+
+module-whatis "loads the $name environment and, optionally, reference_sets.
+               See 'module help' to understand its reference-loading behaviours.\n"
+
+if { [info exists ::env(WORKFLOW_NAME) ] } {
+    module load phe/phe_ref/$::env(WORKFLOW_NAME)/${name}_reference
+}
+
+
+
+#prepend-path PATH            $modroot
+prepend-path PYTHONPATH      $modroot
+prepend-path PATH      $modroot
+prepend-path PATH      $modroot/mixed_infection_analysis
+prepend-path PATH      $modroot/reference_mapping_scripts
+
+setenv GENERATE_HCV_CONSENSUS_VICUNA_CONFIG $modroot/configs/vicuna_config.txt
+
+module load python/2.7.6
+module load yaml/1.1
+module load psutil/python2.7.6/3.0.0
+module load jdk/1.8.0_121
+module load picard-tools/1.111
+module load samtools/1.1
+module load blast+/2.2.27
+module load bamtools/2.3.0
+module load bwa/0.7.13
+
+module load phe/common_modules
+module load phe/quasi_bam/dev
+
+conflict        phe/generate_hcv_consensus
