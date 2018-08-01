@@ -177,7 +177,7 @@ class snorklib(object):
         else:
             # endpoint is /bin
             for p in in_paths:
-                if not has_version_endpoint(p.replace(endpoint,'')):
+                if not uf.has_version_endpoint(p.replace(endpoint,'')):
                     continue
                 else:
                     return '{}/{}'.format(p, exe)
@@ -206,8 +206,10 @@ class snorklib(object):
                     L = line.split("=")
                     var = L[0].replace(" ", "")         # Contains no spaces
                     val = "=".join(L[1:]).strip()       # Could contain spaces
-                    self.option[line_section][var] = parsePATH_for_(val)
-                    optionflat[var] = parsePATH_for_(val)
+                    if line_section == 'prog': 
+                        self.option[line_section][var] = self.parsePATH_for_(val)
+                        optionflat[var] = self.parsePATH_for_(val)
+                        
             in_fp.close() # odd way to wrap up a contextmanager
       # The section that replaces any instances of {variable} with the value of self.option[section][variable]
       # For every variable, replace {variable} with value in every other value in the dictionary.
