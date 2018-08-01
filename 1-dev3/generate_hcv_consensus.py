@@ -17,8 +17,8 @@ import shutil
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 import inspect
-
 import log_writer
+from utility_functions import write_component_complete
 
 __version__ = '0.1'
 __date__ = '07Jun2018'
@@ -194,15 +194,15 @@ def main():
     hq_fq2 = '%s.processed.R2.fastq' % (sample)    
     filt_fq1 = 'assembly/%s_filtered_1.fastq' % (sample)
     filt_fq2 = 'assembly/%s_filtered_2.fastq' % (sample)
-    db = '/home/kieren/result_dir/hg38_hcv_k15_s3' #IMPORTANT TODO define HCV db filepath
-#    db = '{}/TODO here insert name of smalt refset once copied into refset_dir'.format(Args.refset_dir)
-    hcvfasta = '/home/kieren/UCL_IVA/Data/hcv.fasta'
-#    hcvfasta = '{}/lastz_hcv.fasta'.format(Args.refset_dir)
+#    db = '/home/kieren/result_dir/hg38_hcv_k15_s3' #IMPORTANT TODO define HCV db filepath
+    db = '{}/hg38_hcv_nless_k15_s3'.format(Args.refset_dir)
+#    hcvfasta = '/home/kieren/UCL_IVA/Data/hcv.fasta'
+    hcvfasta = '{}/lastz_hcv.fasta'.format(Args.refset_dir)
 #    db = '/phengs/hpc_software/ucl_assembly/hg38_hcv_nless_k15_s3' #define HCV db filepath
 #    hcvfasta = '/home/kieren/UCL_IVA/Data/hcv.fasta'
     contigs= 'assembly/%s.contigs.fasta' % (sample)
     best_ref_fasta = '%s-ref.fasta' % (sample)
-    lastz_path = '/home/kieren/lastz-distrib/bin/lastz'
+    lastz_path = 'lastz'
     lastz_analysed_file = 'assembly/lastz_analysed_file'
     cons1_sorted_final = 'assembly/%s.consensus1.sorted.bam' % (sample)    
     
@@ -210,17 +210,22 @@ def main():
     print 'Filtering', filt_fq1
     split_pops(logger, Args, sample, filt_fq1, filt_fq2)
     print 'Splitpops', filt_fq1
-#    denovo_assembly(logger, sample, Args)
-#    print 'De novo', filt_fq1
-#    find_best_ref(sample, hcvfasta, logger)
-#    print 'Find bestref', filt_fq1
-#    assemble_draft(sample, lastz_path, best_ref_fasta, logger)
-#    print 'Assemble draft', filt_fq1
-#    contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analysed_file, logger)
-#    print 'Contig map', filt_fq1
-#    quasibam(sample, cons1_sorted_final, logger)
-#    print 'Quasibam', filt_fq1
+    denovo_assembly(logger, sample, Args)
+    print 'De novo', filt_fq1
+    find_best_ref(sample, hcvfasta, logger)
+    print 'Find bestref', filt_fq1
+    assemble_draft(sample, lastz_path, best_ref_fasta, logger)
+    print 'Assemble draft', filt_fq1
+    contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analysed_file, logger)
+    print 'Contig map', filt_fq1
+    quasibam(sample, cons1_sorted_final, logger)
+    print 'Quasibam', filt_fq1
+    cat_xmls(input_dir, component_dir, logger)
+    print 'Combine ghc XMLs', sample
 
+    #Write ComponentComplete.txt to signify successful completion of component
+    write_component_complete('%s/%s' % (Args.input, 'generate_hcv_consensus'))
+   
     return 0
 
 def human_filtering (sample, db, hq_fq1, hq_fq2, logger, filt_fq1, filt_fq2):
@@ -283,28 +288,8 @@ def human_filtering (sample, db, hq_fq1, hq_fq2, logger, filt_fq1, filt_fq2):
             #Close file handle for sam file
             p1.stdout.close()
         
-#	try:	
             (stdoutdata, stderrdata) = p2.communicate()
     
-#        except OSError as e:
-#                print "OSError > ",e.errno
-#                print "OSError > ",e.strerror
-#                print "OSError > ",e.filename
-#        except:
-#            print "Error > ",sys.exc_info()[0]
-#            log_writer.write_log(logger,
-#                                 "Error: %s\n" % (sys.exc_info()[0]),
-#                                 "error")       
- #       if stdoutdata:
-  #          print 'smaltrc ', p1.returncode
- #           print 'greprc ', p2.returncode
- #           print "SUCCESS ", stdoutdata
- #       if stderrdata:
- #           print 'smaltrc ', p1.returncode
- #           print 'greprc ', p2.returncode
- #           print "ERROR ",stderrdata.strip()
-    
-
     for flag, fq in zip(('64','128'), (filt_fq1, filt_fq2)):
         with open(fq, 'wb') as openfq:
             
@@ -373,27 +358,6 @@ def human_filtering (sample, db, hq_fq1, hq_fq2, logger, filt_fq1, filt_fq2):
             except OSError as e:
                 sys.exit("failed to execute program '%s': %s" % (p1, str(e)))
                
-
-
-
-#                if stdoutdata:
-#                    print 'view_fqrc ', p1.returncode
-#                    print 'bamtofqrc ', p2.returncode
-#                    print "SUCCESS ",stdoutdata
-#                if stderrdata:
-#                    print 'view_fqrc ', p1.returncode
-#                    print 'bamtofqrc ', p2.returncode
-#                    print "ERROR ",stderrdata.strip()
-
-#            except OSError as e:
-#                print "OSError > ",e.errno
-#                print "OSError > ",e.strerror
-#                print "OSError > ",e.filename
-#            except:
-#                print "Error > ",sys.exc_info()[0]    
-#                log_writer.write_log(logger,
-#                                     "Error: %s\n" % (sys.exc_info()[0]),
-#                                     "error")
     
     # Count the number of reads in the human filtered fastqs
 
@@ -421,22 +385,24 @@ def human_filtering (sample, db, hq_fq1, hq_fq2, logger, filt_fq1, filt_fq2):
                          'Filtered reverse reads: %s\n' % (filt_rev_reads),
                          "info")
 
-    result = ET.Element('results')
-    items = ET.SubElement(result,'trimming')
-    item1 = ET.SubElement(items, 'fw_reads')
-    item2 = ET.SubElement(items, 'rev_reads')
-    item3 = ET.SubElement(items, 'filt_fw_reads')
-    item4 = ET.SubElement(items, 'filt_rev_reads')
-    item1.set('result','fwd trimmed reads')
-    item2.set('result','rev trimmed reads')
-    item3.set('result','fwd filtered reads')
-    item4.set('result','rev filtered reads')
-    item1.text = str(fw_reads)
-    item2.text = str(rev_reads)
-    item3.text = str(filt_fw_reads)
-    item4.text = str(filt_rev_reads)
+    res_type = ET.Element('result')
+    res_type.set('type','ghc trimming')
+    item1 = ET.SubElement(res_type, 'result_data')
+    item2 = ET.SubElement(res_type, 'result_data')
+    item3 = ET.SubElement(res_type, 'result_data')
+    item4 = ET.SubElement(res_type, 'result_data')
+    item1.set('type','fwd trimmed reads')
+    item2.set('type','rev trimmed reads')
+    item3.set('type','fwd filtered reads')
+    item4.set('type','rev filtered reads')
+    item1.set('value', str(fw_reads))
+    item2.set('value', str(rev_reads))
+    item3.set('value', str(filt_fw_reads))
+    item4.set('value', str(filt_rev_reads))
     
-    xmldata = ET.tostring(result)
+    xmldata = minidom.parseString(
+        ET.tostring(res_type, encoding='utf-8')
+        ).toprettyxml(indent="  ")
     samplexml = '%s_trim_filter.xml' % sample
     xmlfile = open(samplexml, 'w')
     xmlfile.write(xmldata)
@@ -453,6 +419,8 @@ def split_pops(logger, Args, sample, filt_fq1, filt_fq2):
                          "info")
 
     snork = 'snork.py'
+    snork_cfg = '{}/snork.config.wtchg'.format(Args.refset_dir)
+#    print 'SNORK CONFIG:\n', snork_cfg
     target_ref = '{}/new_hcvrefset'.format(Args.refset_dir)
 #    target_ref = '/home/kieren/generate_hcv_consensus/1-dev3/mixed_infection_analysis/new_hcvrefset'   
     filt_bam = '%s_filtered.bam' % (sample)
@@ -525,7 +493,7 @@ def split_pops(logger, Args, sample, filt_fq1, filt_fq2):
         p2 = subprocess.Popen([snork, 'splitpops',
                                '-bin', 'snorktest/src6',
                                '-profile', 'None',
-                               '-config', '/phengs/hpc_software/ucl_assembly/snork.config.wtchg',
+                               '-config', snork_cfg,
                                '-orgid', 'Hepc',
                                '-dataid', sample,
                                '-samplename', sample,
@@ -557,7 +525,7 @@ def split_pops(logger, Args, sample, filt_fq1, filt_fq2):
 
         
 #        if stdoutdata:
-#            print "splitpopsrc ",p2.returncode
+#            print "splitpopsrc ",p1.returncode
                         # sys.stdout.write("splitpopsrc %i\n" % (p2.returncode))
 #                        log_writer. ...
 #            print "SUCCESS ",stdoutdata
@@ -593,16 +561,18 @@ def split_pops(logger, Args, sample, filt_fq1, filt_fq2):
 #            for k,v in d.items():
 #            print k, '=', v
 
-        result = ET.Element('results')
-        items = ET.SubElement(result,'genotypes')
-        item1 = ET.SubElement(items, 'genotype1')
-        item2 = ET.SubElement(items, 'genotype2')
-        item1.set('result',main_geno_name)
-        item2.set('result',second_geno_name)
-        item1.text = str(main_geno_perc)
-        item2.text = str(second_geno_perc)
+        res_type = ET.Element('result')
+        res_type.set('type','ghc genotypes')
+        item1 = ET.SubElement(res_type, 'result_data')
+        item2 = ET.SubElement(res_type, 'result_data')
+        item1.set('type', main_geno_name)
+        item1.set('value', str(main_geno_perc))
+        item2.set('type', second_geno_name)
+        item2.set('value', str(second_geno_perc))
 
-        xmldata = ET.tostring(result)
+        xmldata = minidom.parseString(
+            ET.tostring(res_type, encoding='utf-8')
+            ).toprettyxml(indent="  ")
         samplexml = '%s_splitpops.xml' % sample
         xmlfile = open(samplexml, 'w')
         xmlfile.write(xmldata)
@@ -718,60 +688,55 @@ def denovo_assembly(logger, sample, Args):
 #        result = doc_xml.createElement('result')
 #        result.setAttribute('sample', sample)
 
-    result = ET.Element('results')
+    res_type = ET.Element('result')
 
     if int(count) == 0:
         print 'No contig'
-        items = ET.SubElement(result, 'Contigs')
-        item1 = ET.SubElement(items, 'number of contigs')
-        item1.set('Contig value','number')
-        item1.text = 'No contigs'    
-    
+        res_type.set('type','ghc denovo')
+        item1 = ET.SubElement(res_type, 'result_data')
+        item1.set('type','Contig number')
+        item1.set('value','No contigs')
 
-#        result.setAttribute('contigs', 'contigs')
- #           result.setAttribute('Number', 'No contig')
-#        txt = doc_xml.createTextNode('No contig')
-#            result.appendChild(txt)
- #           doc_xml.appendChild(result)
-#        print doc_xml.toprettyxml()
+#        items = ET.SubElement(result, 'Contigs')
+#        item1 = ET.SubElement(items, 'number of contigs')
+#        item1.set('Contig value','number')
+#        item1.text = 'No contigs'    
+    
 
     elif int(count) == 1:
         print 'Single contig'
-        items = ET.SubElement(result, 'Contigs')
-        item2 = ET.SubElement(items, 'number of contigs')
-        item2.set('Contig value','number')
-        item2.text = 'Single contig'
+        res_type.set('type','ghc denovo')
+        item2 = ET.SubElement(res_type, 'result_data')
+        item2.set('type','Contig number')
+        item2.set('value','Single contig')
 
 
-
-#        result.setAttribute('contigs', 'contigs')
-#            result.setAttribute('Number', 'Single contig')
-#        txt = doc_xml.createTextNode('Single contig')
- #               result.appendChild(txt)
-  #              doc_xml.appendChild(result)
-#        print doc_xml.toprettyxml()
+#        items = ET.SubElement(result, 'Contigs')
+#        item2 = ET.SubElement(items, 'number of contigs')
+#        item2.set('Contig value','number')
+#        item2.text = 'Single contig'
 
     else:
         print 'Number of contigs =', count
-        items = ET.SubElement(result, 'Contigs')
-        item3 = ET.SubElement(items, 'number of contigs')
-        item3.set('Contig value','number')
-        item3.text = str(count)
+        res_type.set('type','ghc denovo')
+        item3 = ET.SubElement(res_type, 'result_data')
+        item3.set('type','Contig number')
+        item3.set('value', count)
 
 
-
-
-#        result.setAttribute('contigs', 'contigs')
-#            result.setAttribute('Number', str(count))
-#        txt = doc_xml.createTextNode(str(count))
- #               result.appendChild(txt)
-  #              doc_xml.appendChild(result)
-#        print doc_xml.toprettyxml()
-        
+#        items = ET.SubElement(result, 'Contigs')
+#        item3 = ET.SubElement(items, 'number of contigs')
+#        item3.set('Contig value','number')
+#        item3.text = str(count)
 
     print '\n'.join(newdata)
+
     
-    xmldata = ET.tostring(result)
+    # Print pretty XML  
+    xmldata = minidom.parseString(
+        ET.tostring(res_type, encoding='utf-8')
+        ).toprettyxml(indent="  ")   
+#    xmldata = ET.tostring(result)
     samplexml = '%s_denovo.xml' % sample
     xmlfile = open(samplexml, 'w')
     xmlfile.write(xmldata)     
@@ -792,7 +757,7 @@ def find_best_ref(sample, hcvfasta, logger):
     be selected for mapping to create a draft assembly"""
     
     #Path to current available lastz executable
-    lastz_path = '/home/kieren/lastz-distrib/bin/lastz'
+    lastz_path = 'lastz'
     #Path to contigs fasta file with the specification of [multiple] required by lastz if multiple contigs
     contigs = 'assembly/%s.contigs.fasta[multiple]' % (sample)
     #Path to lastz output file
@@ -1236,13 +1201,15 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                     sys.exit(97)
 
 #   Generate mapping XML
-    result = ET.Element('results')
-    items = ET.SubElement(result,'mapping')
-    item1 = ET.SubElement(items, 'mapping')
-    item1.set('result','reads mapped to contigs')
-    item1.text = str(stdoutdata)
+    res_type = ET.Element('result')
+    res_type.set('type','ghc mapping')
+    item1 = ET.SubElement(res_type, 'result_data')
+    item1.set('type','reads mapped to contigs')
+    item1.set('value', str(stdoutdata).rstrip())
 
-    xmldata = ET.tostring(result)
+    xmldata = minidom.parseString(
+        ET.tostring(res_type, encoding='utf-8')
+        ).toprettyxml(indent="  ")
     samplexml = '%s_mapping.xml' % sample
     xmlfile = open(samplexml, 'w')
     xmlfile.write(xmldata)
@@ -1285,8 +1252,26 @@ def quasibam(sample, cons1_sorted_final, logger):
                              "error")
         sys.exit(98)
 
+def cat_xmls(input_dir, component_dir, logger):
+    xmls_exist = len(glob.glob(os.path.join(input_dir + '/' + component_dir + '/' + '*.xml'))) == 4
+#    outfile = input_dir + '/' + component_dir + '/cat_xml.xml'
+#    print outfile
+
+    if not xmls_exist:
+        log_writer.write_log(logger,
+                             "ERROR: Expecting 4 xml files in %s" % (input_dir),
+                             "error")
+        sys.exit(99)
+
+    with open(input_dir + '/' + component_dir + '/results.xml', 'w') as outfile:
+        for file in glob.glob(os.path.join('*.xml')):
+            with open(file) as f:
+                for line in f:
+                    if "<?xml" not in line:
+                        outfile.write(line)
+
+
 
 if __name__ == '__main__':
 
-        main()
-
+    sys.exit(main())
