@@ -37,7 +37,6 @@ The processes involve:
 
 **RETURN CODES**
 
-    '''Return codes ------------ 
     66: no input provided in command line 
     67: component directorty already exists
     68: no processed fastqs in the input directory
