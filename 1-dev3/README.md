@@ -35,6 +35,44 @@ The processes involve:
 
 ```generate_hcv_consensus.py -i <input_dir> -w <workflow> -r <reference_sets>```
 
+**RETURN CODES**
+
+    '''Return codes ------------ 
+    66: no input provided in command line 
+    67: component directorty already exists
+    68: no processed fastqs in the input directory
+    69: failed to unzip .gz fastq files
+    70: paired sam file does not exist
+    71: paired sam file is empty 
+    72: samtools view failed 
+    73: samtools bam2fq failed 
+    74: fastq2sam failed 
+    75: filtered bam file does not exist 
+    76: filtered bam file is empty 
+    77: snork splitpops failed
+    78: GENERATE_HCV_CONSENSUS_VICUNA_CONFIG environment variable not set
+    79: vicuna de novo assembly failed
+    80: lastz failed
+    81: lastz bestref failed
+    82: lastz compare failed
+    83: lastz analyser reverse failed
+    84: bwa index failed
+    85: bwa mem failed
+    86: samtools view failed in contig mapping
+    87: samtools sort failed
+    88: samtools index failed
+    89: samtools mpileup failed
+    90: genome maker failed
+    91: cons mv failed
+    92: n remover failed
+    93: cons mv basefreq failed
+    94: n remover cons2 failed
+    95: majvar bwa failed
+    96: samtools view final failed
+    97: quasibam failed
+    98: expecting 4 xml files
+
+
 **HISTORY**
 
 **Contributors**
