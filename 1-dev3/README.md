@@ -37,6 +37,6 @@ The processes involve:
 
 **HISTORY**
 
-Contributors
+**Contributors**
 
 Kieren Lythgow, Matthew Goulden
