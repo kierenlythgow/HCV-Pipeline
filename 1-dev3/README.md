@@ -1,4 +1,4 @@
-###README
+**README**
 ======
 
 The generate_hcv_consensus component performs a series of processes that consumes trimmed fastq files and generates a consensus sequence and minority variant report.
@@ -14,7 +14,7 @@ The processes involve:
 7. Consensus & minority variants - Quasibam generates a consensus and minority variant report.
 8. Combine XMLS - XML's are combined into one document.
 
-###REQUIREMENTS
+**REQUIREMENTS**
 
   1) python/2.7.6                                                   
   2) yaml/1.1                                                      
@@ -31,11 +31,11 @@ The processes involve:
   13) phe/common_modules/1-22
   14) phe/quasi_bam
 
-###PREREQUISITES
+**PREREQUISITES**
 
-generate_hcv_consensus.py -i <input_dir> -w <workflow> -r <reference_sets>
+```generate_hcv_consensus.py -i <input_dir> -w <workflow> -r <reference_sets>```
 
-###HISTORY
+**HISTORY**
 
 Contributors
 
