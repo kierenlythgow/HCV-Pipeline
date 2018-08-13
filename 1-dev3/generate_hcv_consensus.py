@@ -21,20 +21,21 @@ import log_writer
 from utility_functions import write_component_complete
 
 __version__ = '0.1'
-__date__ = '07Jun2018'
+__date__ = '01Aug2018'
 __author__ = 'kieren.lythgow@phe.gov.uk'
 
 def parse_args():
+
     """
-#    Parge arguments
-#    Parameters
-#    ----------
-#    no inputs
-#    Returns
-#    -------
-#    Args: obj
-#    arguments object
-#    """
+     Parge arguments
+     Parameters
+     ----------
+     no inputs
+     Returns
+     -------
+     Args: obj
+     arguments object
+     """
 
     Description = 'version %s, date %s, author %s' %(__version__, __date__, __author__)
 
@@ -81,6 +82,43 @@ def main():
     else int > 0
     """
 
+    '''Return codes ------------ 
+    66: no input provided in command line 
+    67: component directorty already exists
+    68: no processed fastqs in the input directory
+    69: failed to unzip .gz fastq files
+    70: paired sam file does not exist
+    71: paired sam file is empty 
+    72: samtools view failed 
+    73: samtools bam2fq failed 
+    74: fastq2sam failed 
+    75: filtered bam file does not exist 
+    76: filtered bam file is empty 
+    77: snork splitpops failed
+    78: GENERATE_HCV_CONSENSUS_VICUNA_CONFIG environment variable not set
+    79: vicuna de novo assembly failed
+    80: lastz failed
+    81: lastz bestref failed
+    82: lastz compare failed
+    83: lastz analyser reverse failed
+    84: bwa index failed
+    85: bwa mem failed
+    86: samtools view failed in contig mapping
+    87: samtools sort failed
+    88: samtools index failed
+    89: samtools mpileup failed
+    90: genome maker failed
+    91: cons mv failed
+    92: n remover failed
+    93: cons mv basefreq failed
+    94: n remover cons2 failed
+    95: majvar bwa failed
+    96: samtools view final failed
+    97: quasibam failed
+    98: expecting 4 xml files
+    '''
+
+
     Args = parse_args()
     if not Args.refset_dir:
         print('pass a full refset path to the `ref_set` passed to param')
@@ -105,11 +143,6 @@ def main():
 
     #Determine sample name
     input_dir = Args.input
-#    sample_dir = os.path.dirname(input_dir)
-#    sample_detail = os.path.basename(sample_dir).rsplit('_', 4)
-#    sample = sample_detail[0]
-
-#    sample = dir_detail[1] + '_' + dir_detail[2]
     
     #Change to input directory	
     os.chdir(input_dir)
@@ -144,7 +177,7 @@ def main():
         shutil.copy2(file, component_dir)
         sample_detail = file.split('.')
         sample = sample_detail[0] + '.' + sample_detail[1] + '.' + sample_detail[2]
-        
+        res_sample = sample_detail[0]
     print sample
     
     #Change to component directory   	
@@ -154,6 +187,7 @@ def main():
                          'Current dir: %s\n' % (os.getcwd()),
                          "info")
 
+    #Unzip processed fastqs as required for read counting
     for pfq in glob.glob(r'*processed*fastq*'):
         try:
             p1 = subprocess.Popen(['gunzip', pfq],
@@ -176,7 +210,8 @@ def main():
             sys.exit("failed to execute program '%s': %s" % (p1, str(e)))
 
 #    output_dir = Args.resxml
-
+    
+    #Check assembly directory doesn't already exists and creates one if not
     assembly_dir = 'assembly/'
     if not os.path.exists(assembly_dir):
         os.makedirs(assembly_dir)
@@ -184,22 +219,17 @@ def main():
                          'Assembly dir: %s\n' % (assembly_dir),
                          "info")
 
-#    hq_fq1 = '%s_hq_1.fastq' % (sample)
-#    hq_fq2 = '%s_hq_2.fastq' % (sample)
 
 #    NEED TO PARSE THIS FILENAME APPROPRIATELY
 #      NGS4_Sample_191-1.HCV-sequence-capture.ngsservice.processed.R2.fastq.gz
-    
+
+    #Set paths to various files and refsets    
     hq_fq1 = '%s.processed.R1.fastq' % (sample)
     hq_fq2 = '%s.processed.R2.fastq' % (sample)    
     filt_fq1 = 'assembly/%s_filtered_1.fastq' % (sample)
     filt_fq2 = 'assembly/%s_filtered_2.fastq' % (sample)
-#    db = '/home/kieren/result_dir/hg38_hcv_k15_s3' #IMPORTANT TODO define HCV db filepath
     db = '{}/hg38_hcv_nless_k15_s3'.format(Args.refset_dir)
-#    hcvfasta = '/home/kieren/UCL_IVA/Data/hcv.fasta'
     hcvfasta = '{}/lastz_hcv.fasta'.format(Args.refset_dir)
-#    db = '/phengs/hpc_software/ucl_assembly/hg38_hcv_nless_k15_s3' #define HCV db filepath
-#    hcvfasta = '/home/kieren/UCL_IVA/Data/hcv.fasta'
     contigs= 'assembly/%s.contigs.fasta' % (sample)
     best_ref_fasta = '%s-ref.fasta' % (sample)
     lastz_path = 'lastz'
@@ -220,7 +250,7 @@ def main():
     print 'Contig map', filt_fq1
     quasibam(sample, cons1_sorted_final, logger)
     print 'Quasibam', filt_fq1
-    cat_xmls(input_dir, component_dir, logger)
+    cat_xmls(input_dir, component_dir, logger, res_sample)
     print 'Combine ghc XMLs', sample
 
     #Write ComponentComplete.txt to signify successful completion of component
@@ -230,6 +260,34 @@ def main():
 
 def human_filtering (sample, db, hq_fq1, hq_fq2, logger, filt_fq1, filt_fq2):
     """Requires HCV smalt database index path and trimmed fastq files"""
+
+    '''
+    Runs smalt to map reads against a combined human and HCV reference set.
+    Human reads are then filtered out for remaining analysis.
+
+    Parameters
+    ----------
+    sample: str
+        sample name
+    db: str
+        indexed smalt database
+    hq_fq1: str
+        trimmed forward fastq file
+    hq_fq2: str
+        trimmed reverse fastq file
+    logger: obj
+        logger object
+    filt_fq1: str
+        filtered forward fastq file
+    filt_fq2: str
+        filtered reverse fastq file
+
+    Returns
+    -------
+    result: files
+        results in 2 human read filtered fastq files for further processing
+    '''
+
 
     pairs_sam = '%s_pairs.sam' % (sample)
 
@@ -278,8 +336,6 @@ def human_filtering (sample, db, hq_fq1, hq_fq2, logger, filt_fq1, filt_fq2):
             
             #Filter reads using awk
             p2 = subprocess.Popen(['awk', """{if ($3 !~ /^chr/ && $7 !~ /^chr/) print $0}"""],            
-            #Filter reads using grep    
-#           p2 = subprocess.Popen(['grep', '-v', 'SN:chr'],
             #Pass smalt stdout to grep stdin
             stdin=p1.stdout,
             #Pass stdout to sam file
@@ -307,7 +363,7 @@ def human_filtering (sample, db, hq_fq1, hq_fq2, logger, filt_fq1, filt_fq2):
                 log_writer.write_log(logger,
                          'ERROR: %s file is empty\n' % (pairs_sam),
                          "error")
-                sys.exit(73)
+                sys.exit(71)
 
 #            if os.path.exists(bam):
 
@@ -342,7 +398,7 @@ def human_filtering (sample, db, hq_fq1, hq_fq2, logger, filt_fq1, filt_fq2):
                     log_writer.write_log(logger,
                                   'ERROR: Samtools view failed. Exit code:%s\n. Error message: %s\n' % (p1.returncode, stderrdata),
                                   "error")
-                    sys.exit(74)
+                    sys.exit(72)
 
 
                 if p2.returncode == 0:
@@ -353,7 +409,7 @@ def human_filtering (sample, db, hq_fq1, hq_fq2, logger, filt_fq1, filt_fq2):
                     log_writer.write_log(logger,
                                   'ERROR: Samtools bam2fq failed. Exit code:%s\n. Error message: %s\n' % (p2.returncode, stderrdata),
                                   "error")
-                    sys.exit(75)
+                    sys.exit(73)
 
             except OSError as e:
                 sys.exit("failed to execute program '%s': %s" % (p1, str(e)))
@@ -410,6 +466,32 @@ def human_filtering (sample, db, hq_fq1, hq_fq2, logger, filt_fq1, filt_fq2):
 def split_pops(logger, Args, sample, filt_fq1, filt_fq2):
 #    ###SPLIT POPULATIONS###
     
+    """Processes the filtered fastqs through the snork splitpops software that aims
+    to identify presence of mixed infections"""
+
+    '''
+    Maps individual reads against a database of HCV references sequences.
+
+    Parameters
+    ----------
+    sample: str
+        sample name
+    logger: obj
+        logger object
+    Args: str
+        reference database
+    filt_fq1: str
+        filtered forward fastq file
+    filt_fq2: str
+        filtered reverse fastq file
+
+    Returns
+    -------
+    result: file
+        results in a text output of the percentages of each genotype present within the sample
+    '''
+
+
     #Essential that this directory is completely separate as splitpops cleans up the directory and deletes all input files
     split_dir = 'splitpops/'
     if not os.path.exists(split_dir):
@@ -466,10 +548,9 @@ def split_pops(logger, Args, sample, filt_fq1, filt_fq2):
         log_writer.write_log(logger,
                             'ERROR: FastqToSam failed. Exit code:%s\n. Error message: %s\n' % (p1.returncode, stderrdata),
                             "error")
-        sys.exit(77)
+        sys.exit(74)
         
     #Run splitpops.py on bam file
-#    /home/kieren/Snork6/Snork-PHE/0.6/src/snork.py splitpops -bin snorktest/src6 -profile None -config /phengs/hpc_software/ucl_assembly/snork.config.wtchg -orgid Hepc -dataid 170926_18 -samplename 170926_18 -bampath temp/170926_18_filtered.bam -targetrefid wtchgR00000071 -targetrefpath /phengs/hpc_software/ucl_assembly/wtchgR00000071.fa -outdir temp/ -logdir temp/ -overwrite False -deleteints True -verbosity DEBUG
 
 #    p2 = subprocess.list2cmdline([splitpops, 'splitpops', '-bin snorktest/src6',
 #        try:
@@ -518,28 +599,8 @@ def split_pops(logger, Args, sample, filt_fq1, filt_fq2):
             log_writer.write_log(logger,
                                  'ERROR: Snork splitpops failed. Exit code:%s\n. Error message: %s\n' % (p2.returncode, stderrdata),
                                  "error")
-            sys.exit(78)
+            sys.exit(77)
 
-#        except OSError as e:
-#            sys.exit("failed to execute program '%s': %s" % (p1, str(e)))
-
-        
-#        if stdoutdata:
-#            print "splitpopsrc ",p1.returncode
-                        # sys.stdout.write("splitpopsrc %i\n" % (p2.returncode))
-#                        log_writer. ...
-#            print "SUCCESS ",stdoutdata
-#        if stderrdata:
-#            print "splitpopsrc ",p2.returncode
-#            print "ERROR ",stderrdata.strip()
-#            sys.stderr.write("ERROR %s\n" % (stderrdata.strip()))
-    
-#    except OSError as e:
-#        print "OSError > ",e.errno
-#        print "OSError > ",e.strerror
-#        print "OSError > ",e.filename
-#    except:
-#        print "Error > ",sys.exc_info()[0]
 
     split_stats = 'splitpops/%s_filtered.targetpop.stats.txt' % (sample)
     
@@ -555,12 +616,7 @@ def split_pops(logger, Args, sample, filt_fq1, filt_fq2):
         second_geno_name = second_geno[0]
         second_geno_perc = second_geno[2]
 
-#            for row in csv.reader(lines, delimiter='\t'):
-#                    row[2] = float(row[2])
-#                    d[row[0]] = row[2]
-#            for k,v in d.items():
-#            print k, '=', v
-
+	#Create splitpops XML
         res_type = ET.Element('result')
         res_type.set('type','ghc genotypes')
         item1 = ET.SubElement(res_type, 'result_data')
@@ -576,14 +632,6 @@ def split_pops(logger, Args, sample, filt_fq1, filt_fq2):
         samplexml = '%s_splitpops.xml' % sample
         xmlfile = open(samplexml, 'w')
         xmlfile.write(xmldata)
-
-#    doc_xml = minidom.Document()
-        # root of documents for each pipeline module is "result"
-#        result = doc_xml.createElement('result')
-#        result.setAttribute('sample_id', sample_id)
-#        result.setAttribute('type', 'trimmed forward reads')
-#        result.setAttribute('value'), fw_reads)
-
 
 
 #    #Run bamtools split on splitpops bam
@@ -602,16 +650,26 @@ def split_pops(logger, Args, sample, filt_fq1, filt_fq2):
 #
 
 def denovo_assembly(logger, sample, Args):
-    """De novo assembly using VICUNA requires the filtered fastq files following human and non-HCV sequence removal"""
+    """De novo assembly using VICUNA accesses a preconfigured config file that
+    contains the paths to the directory containing the fastq files."""
+
+    '''
+
+    Parameters
+    ----------
+    sample: str
+        sample name
+    logger: obj
+        logger object
+    Args: str
+        reference set
+    Returns
+    -------
+    result: file
+        results in a file containing all the generated contigs
+    '''
 
     ###Starting VICUNA###
-    #Prepare vicuna config file for specific sample
-#    with open(os.environ['GENERATE_HCV_CONSENSUS_VICUNA_CONFIG']) as cfg_in, open('vicuna_config_%s.txt' % (sample), 'w') as cfg_out:
-#        print cfg_in.read()
-#	print '{}/hcv_wgs_alignment.fas'.format(Args.refset_dir)
-#        cfg_out.write(cfg_in.read().replace('*DIR*', os.getcwd()).replace('*MSA_FILE*'), '{}/hcv_wgs_alignment.fas'.format(Args.refset_dir))
-#    sys.exit(581)
-
     #Run VICUNA on sample specific config file
     try:      
         vicuna_config = os.environ['GENERATE_HCV_CONSENSUS_VICUNA_CONFIG']#'/phengs/hpc_software/ucl_assembly/vicuna_config.txt'
@@ -619,7 +677,7 @@ def denovo_assembly(logger, sample, Args):
         log_writer.write_log(logger,
                             'Error: GENERATE_HCV_CONSENSUS_VICUNA_CONFIG environment variable not set: %s\n' % (sys.exc_info()[0]),
                             "error")
-        sys.exit(79)
+        sys.exit(78)
 #        raise EnvironmentError('GENERATE_HCV_CONSENSUS_VICUNA_CONFIG environment variable needs to be set to import this module') from KeyError
     
     with open(vicuna_config) as vc:
@@ -653,7 +711,7 @@ def denovo_assembly(logger, sample, Args):
         log_writer.write_log(logger,
                              'ERROR: VICUNA failed. Exit code:%s\n. Error message: %s\n' % (p1.returncode, stderrdata),
                              "error")
-        sys.exit(80)
+        sys.exit(79)
 
     #Following completion of VICUNA, the 'dg-0' needs to be replaced by sample name and 
     # contig number starting at 1 as VICUNA starts at 0
@@ -683,11 +741,7 @@ def denovo_assembly(logger, sample, Args):
                 #print line.strip()        
                 newdata.append(line.strip())
     
-#    doc_xml = minidom.Document()
-        # root of documents for each pipeline module is "result"
-#        result = doc_xml.createElement('result')
-#        result.setAttribute('sample', sample)
-
+    #Create denovo XML
     res_type = ET.Element('result')
 
     if int(count) == 0:
@@ -697,11 +751,6 @@ def denovo_assembly(logger, sample, Args):
         item1.set('type','Contig number')
         item1.set('value','No contigs')
 
-#        items = ET.SubElement(result, 'Contigs')
-#        item1 = ET.SubElement(items, 'number of contigs')
-#        item1.set('Contig value','number')
-#        item1.text = 'No contigs'    
-    
 
     elif int(count) == 1:
         print 'Single contig'
@@ -711,11 +760,6 @@ def denovo_assembly(logger, sample, Args):
         item2.set('value','Single contig')
 
 
-#        items = ET.SubElement(result, 'Contigs')
-#        item2 = ET.SubElement(items, 'number of contigs')
-#        item2.set('Contig value','number')
-#        item2.text = 'Single contig'
-
     else:
         print 'Number of contigs =', count
         res_type.set('type','ghc denovo')
@@ -723,11 +767,6 @@ def denovo_assembly(logger, sample, Args):
         item3.set('type','Contig number')
         item3.set('value', count)
 
-
-#        items = ET.SubElement(result, 'Contigs')
-#        item3 = ET.SubElement(items, 'number of contigs')
-#        item3.set('Contig value','number')
-#        item3.text = str(count)
 
     print '\n'.join(newdata)
 
@@ -755,6 +794,25 @@ def denovo_assembly(logger, sample, Args):
 def find_best_ref(sample, hcvfasta, logger):
     """Following completion of de novo assembly, the best reference sequence from the HCV database needs to
     be selected for mapping to create a draft assembly"""
+
+    '''
+    Runs lastz to map contigs against the HCV reference set.
+
+    Parameters
+    ----------
+    sample: str
+        sample name
+    hcvfasta: str
+        HCV reference set
+    logger: obj
+        logger object
+
+    Returns
+    -------
+    result: files
+        returns the optimum HCV reference sequence
+    '''
+
     
     #Path to current available lastz executable
     lastz_path = 'lastz'
@@ -785,7 +843,7 @@ def find_best_ref(sample, hcvfasta, logger):
             log_writer.write_log(logger,
                                  'ERROR: Lastz failed. Exit code:%s\n. Error message: %s\n' % (p1.returncode, stderrdata),
                                  "error")
-            sys.exit(81)
+            sys.exit(80)
 
     lastz_log = 'assembly/lastz_besthit.log'
     lastz_bestref = 'lastz_bestref.pl'
@@ -812,10 +870,30 @@ def find_best_ref(sample, hcvfasta, logger):
         log_writer.write_log(logger,
                              'ERROR: Lastz bestref failed. Exit code:%s\n. Error message: %s\n' % (p1.returncode, stderrdata),
                              "error")
-        sys.exit(82)
+        sys.exit(81)
 
 def assemble_draft(sample, lastz_path, best_ref_fasta, logger):
     """The best reference has been defined, now assemble the draft genome"""
+
+    '''
+
+    Parameters
+    ----------
+    sample: str
+        sample name
+    lastz_path: str
+        lastz path
+    logger: obj
+        logger object
+    best_ref_fasta: str
+        Optimum reference sequence
+
+    Returns
+    -------
+    result: files
+        Returns assembled draft sequence
+    '''
+
 
     contigs = 'assembly/%s.contigs.fasta' % (sample)
     contigs_bestref = 'assembly/contigs-vs-bestref.lav'
@@ -840,7 +918,7 @@ def assemble_draft(sample, lastz_path, best_ref_fasta, logger):
             log_writer.write_log(logger,
                                  'ERROR: Lastz compare failed. Exit code:%s\n. Error message: %s\n' % (p1.returncode, stderrdata),
                                  "error")
-            sys.exit(83)
+            sys.exit(82)
 
     lastz_analyser_rev = 'lastz_analyser.WITH_REVCOMP.pl'
     lastz_analysed_file = 'assembly/lastz_analysed_file'
@@ -869,9 +947,36 @@ def assemble_draft(sample, lastz_path, best_ref_fasta, logger):
         log_writer.write_log(logger,
                              'ERROR: Lastz analyser reverse failed. Exit code:%s\n. Error message: %s\n' % (p2.returncode, stderrdata),
                              "error")
-        sys.exit(84)
+        sys.exit(83)
 
 def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analysed_file, logger):
+    """The best reference has been defined, now assemble the draft genome"""
+
+    '''
+
+    Parameters
+    ----------
+    sample: str
+        sample name
+    contigs: str
+        contigs file
+    filt_fq1: str
+        filtered forward fastq file
+    filt_fq2: str
+        filtered reverse fastq file
+    best_ref_fasta: str
+        Optimum reference sequence
+    lastz_analysed_file: str
+        lastz result file
+    logger: obj
+        logger object
+
+    Returns
+    -------
+    result: file
+        Returns consensus sequence
+    '''
+
     ## map reads using BWA MEM to contigs to work out which sequences to choose when contigs overlap
 
     contigs_sam = 'assembly/%s.contigs.sam' % (sample)
@@ -936,7 +1041,7 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
             log_writer.write_log(logger,
                                  'ERROR: BWA index failed. Exit code:%s\n. Error message: %s\n' % (p2.returncode, stderrdata),
                                  "error")
-            sys.exit(85)
+            sys.exit(84)
 
 
         with open(sam, 'w') as s:
@@ -960,7 +1065,7 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                 log_writer.write_log(logger,
                                      'ERROR: BWA MEM failed. Exit code:%s\n. Error message: %s\n' % (p1.returncode, stderrdata),
                                      "error")
-                sys.exit(86)
+                sys.exit(85)
             
 
             p2 = subprocess.Popen(['samtools', 'view', '-bhS',
@@ -978,8 +1083,8 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
             else:
                 log_writer.write_log(logger,
                                      'ERROR: Samtools view failed. Exit code:%s\n. Error message: %s\n' % (p2.returncode, stderrdata),
-                                 "error")
-                sys.exit(87)
+                                     "error")
+                sys.exit(86)
     
             p3 = subprocess.Popen(['samtools', 'sort',
                                    '-@', '8', bam, sorted],
@@ -996,7 +1101,7 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                 log_writer.write_log(logger,
                                     'ERROR: Samtools sort failed. Exit code:%s\n. Error message: %s\n' % (p3.returncode, stderrdata),
                                     "error")
-                sys.exit(88)
+                sys.exit(87)
 
         
             p4 = subprocess.Popen(['samtools', 'index', final],
@@ -1014,7 +1119,7 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                 log_writer.write_log(logger,
                                     'ERROR: Samtools index failed. Exit code:%s\n. Error message: %s\n' % (p4.returncode, stderrdata),
                                     "error")
-                sys.exit(89)
+                sys.exit(88)
        
  
             p5 = subprocess.Popen(['samtools', 'mpileup', '-f',
@@ -1034,7 +1139,7 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                 log_writer.write_log(logger,
                                     'ERROR: Samtools mpileup failed. Exit code:%s\n. Error message: %s\n' % (p5.returncode, stderrdata),
                                     "error")
-                sys.exit(90)
+                sys.exit(89)
 
     
         #Helpful method for checking exactly what is sent to the command line (subprocess.list2cmdline)
@@ -1056,7 +1161,7 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                     log_writer.write_log(logger,
                                         'ERROR: Genome maker failed. Exit code:%s\n. Error message: %s\n' % (p6.returncode, stderrdata),
                                         "error")
-                    sys.exit(91)
+                    sys.exit(90)
 
 
             elif fasta==genome_fasta:
@@ -1084,9 +1189,9 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                                          "info")
                 else:
                     log_writer.write_log(logger,
-                                         'ERROR: Samtools sort failed. Exit code:%s\n. Error message: %s\n' % (p7.returncode, stderrdata),
+                                         'ERROR: Cons mv failed. Exit code:%s\n. Error message: %s\n' % (p7.returncode, stderrdata),
                                          "error")
-                    sys.exit(92)
+                    sys.exit(91)
                
  
                 p8 = subprocess.Popen([n_remover,
@@ -1106,7 +1211,7 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                     log_writer.write_log(logger,
                                         'ERROR: N Remover failed. Exit code:%s\n. Error message: %s\n' % (p8.returncode, stderrdata),
                                          "error")
-                    sys.exit(93)
+                    sys.exit(92)
 
 
             else:
@@ -1137,7 +1242,7 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                     log_writer.write_log(logger,
                                          'ERROR: Cons mv basefreq failed. Exit code:%s\n. Error message: %s\n' % (p9.returncode, stderrdata),
                                          "error")
-                    sys.exit(94)
+                    sys.exit(93)
 
 
                 p10 = subprocess.Popen([n_remover,
@@ -1157,7 +1262,7 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                     log_writer.write_log(logger,
                                          'ERROR: N Remover cons2 failed. Exit code:%s\n. Error message: %s\n' % (p10.returncode, stderrdata),
                                          "error")
-                    sys.exit(95)
+                    sys.exit(94)
     
    
                 p11 = subprocess.Popen([majvar,
@@ -1178,7 +1283,7 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                     log_writer.write_log(logger,
                                          'ERROR: Majvar bwa failed. Exit code:%s\n. Error message: %s\n' % (p11.returncode, stderrdata),
                                          "error")
-                    sys.exit(96)
+                    sys.exit(95)
                
  
                 p12 = subprocess.Popen(['samtools', 'view',
@@ -1198,7 +1303,7 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
                     log_writer.write_log(logger,
                                          'ERROR: Samtools view final failed. Exit code:%s\n. Error message: %s\n' % (p12.returncode, stderrdata),
                                          "error")
-                    sys.exit(97)
+                    sys.exit(96)
 
 #   Generate mapping XML
     res_type = ET.Element('result')
@@ -1215,6 +1320,26 @@ def contig_map(sample, contigs, filt_fq1, filt_fq2, best_ref_fasta, lastz_analys
     xmlfile.write(xmldata)
 
 def quasibam(sample, cons1_sorted_final, logger):
+    """Quasibam requires the consensus sequence and consensus bam file to
+    produce a minority variants report"""
+
+    '''
+
+    Parameters
+    ----------
+    sample: str
+        sample name
+    cons1_sorted_final: str
+        consensus bam file
+    logger: obj
+        logger object
+
+    Returns
+    -------
+    result: files
+        Returns consensus sequence and minority variants report
+    '''
+
 #    """Run quasibam on consensus bam file and consensus fasta sequence"""
 
     consensus = 'assembly/%s.consensus2.fasta' % (sample)    
@@ -1250,26 +1375,48 @@ def quasibam(sample, cons1_sorted_final, logger):
         log_writer.write_log(logger,
                              'ERROR: Quasibam failed. Exit code:%s\n. Error message: %s\n' % (p1.returncode, stderrdata),
                              "error")
-        sys.exit(98)
+        sys.exit(97)
 
-def cat_xmls(input_dir, component_dir, logger):
+def cat_xmls(input_dir, component_dir, logger, res_sample):
+    """Concatenates all the XMLs into one document"""
+
+    '''
+
+    Parameters
+    ----------
+    input_dir: str
+        input directory containing all XML files
+    component_dir: str
+        component directory
+    res_sample: str
+        sample name
+    logger: obj
+        logger object
+
+    Returns
+    -------
+    result: file
+        Returns combined XML file
+    '''
+
+
     xmls_exist = len(glob.glob(os.path.join(input_dir + '/' + component_dir + '/' + '*.xml'))) == 4
-#    outfile = input_dir + '/' + component_dir + '/cat_xml.xml'
-#    print outfile
 
     if not xmls_exist:
         log_writer.write_log(logger,
                              "ERROR: Expecting 4 xml files in %s" % (input_dir),
                              "error")
-        sys.exit(99)
+        sys.exit(98)
 
-    with open(input_dir + '/' + component_dir + '/results.xml', 'w') as outfile:
+    with open(input_dir + '/' + component_dir + '/' + res_sample + '.results.xml', 'w') as outfile:
+        outfile.write('<ngs_sample id="' +  res_sample + '">\n <workflow value="generate_hcv_consensus" version="ngsservice"/>\n')
         for file in glob.glob(os.path.join('*.xml')):
             with open(file) as f:
                 for line in f:
                     if "<?xml" not in line:
                         outfile.write(line)
 
+        outfile.write('</ngs_sample>')
 
 
 if __name__ == '__main__':
